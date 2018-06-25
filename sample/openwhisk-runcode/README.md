@@ -15,8 +15,27 @@ export SERVICE_HOST=$(kubectl get ing owsk-sample-fn-ingress -o jsonpath="{.spec
 ```
 
 
-## Trigger function
+## Serverless function
 
+As illustrated at the sample, the serverless function used [here](https://github.com/rootfs-dev/serverless-ex) is a nodejs function that exporting `main` function, as the following
+
+```javascript
+
+function foo(msg)
+{
+    var wc = msg.payload.split(" ").length;
+    console.log("wc:", wc);
+    return { wc: wc};
+}
+function main(msg)
+{
+    return foo(msg);
+}
+
+module.exports.main = main;
+```
+
+## Test
 Using the following test, replacing IP with `SERVICE_IP` and Host with `SERVICE_HOST`:
 ```javascript
 function run(msg) {
