@@ -1,0 +1,115 @@
+apiVersion: v1
+data:
+  Dockerfile: |
+    FROM docker.io/hchen/owsk-no-init:latest
+    RUN mkdir -p /nodejsAction/function
+    COPY index.js /nodejsAction/function/
+    ENTRYPOINT ["node", "--expose-gc", "app.js"]
+kind: ConfigMap
+metadata:
+  name: dockerfile
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: basic-user-pass
+  annotations:
+    build.dev/docker-0: index.docker.io
+type: kubernetes.io/basic-auth
+data:
+  username: a2l0dHltZW93
+  password: bWVvdzN0aW1lcw==
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: build-bot
+secrets:
+- name: basic-user-pass
+---
+apiVersion: build.dev/v1alpha1
+kind: BuildTemplate
+metadata:
+  name: owsk-ftl
+spec:
+  parameters:
+  # This has no default, and is therefore required.
+  - name: IMAGE
+    description: Where to publish the resulting image.
+  # These may be overriden, but provide sensible defaults.
+  - name: DIRECTORY
+    description: The directory containing the build context.
+    default: /workspace
+  - name: DOCKERFILE_NAME
+    description: The name of the Dockerfile
+    default: Dockerfile
+  steps:
+  - name: dockerfile-build
+    image: gcr.io/cloud-builders/docker
+    workingdir: "${DIRECTORY}"
+    command: ["sh"]
+    args: ["-c", "cp /docker/Dockerfile ${DOCKERFILE_NAME}; \
+            docker build --no-cache -t ${IMAGE} ."]
+    volumeMounts:
+    - name: docker-socket
+      mountPath: /var/run/docker.sock
+    - name: dockerfile
+      mountPath: /docker/
+      
+  - name: dockerfile-push
+    image: gcr.io/cloud-builders/docker
+    command: ["sh"]
+    # knative build should write  docker.io credentials to config.json correctly
+    args: ["-c", "docker login -u kittymeow -p meow3times; \
+                  docker push ${IMAGE}"]
+    volumeMounts:
+    - name: docker-socket
+      mountPath: /var/run/docker.sock
+
+  # As an implementation detail, this template mounts the host's daemon socket.
+  volumes:
+  - name: docker-socket
+    hostPath:
+      path: /var/run/docker.sock
+      type: Socket
+  - name: dockerfile
+    configMap:
+      name: dockerfile
+---
+apiVersion: serving.knative.dev/v1alpha1
+kind: Route
+metadata:
+  name: owsk-sample-fn
+  namespace: default
+spec:
+  traffic:
+  - configurationName: owsk-sample-function
+    percent: 100
+---
+apiVersion: serving.knative.dev/v1alpha1
+kind: Configuration
+metadata:
+  name: owsk-sample-function
+  namespace: default
+spec:
+  build:
+    serviceAccountName: build-bot
+    source:
+      git:
+        url: https://github.com/rootfs-dev/serverless-ex
+        branch: master
+    template:
+      name: owsk-ftl
+      arguments:
+      - name: IMAGE
+        value: &image index.docker.io/kittymeow/serverless-ex
+  revisionTemplate:
+    metadata:
+      labels:
+        knative.dev/type: function
+    spec:
+      container:
+        image: *image
+        env:
+        - name: FUNCTION_TRIGGER_TYPE
+          value: HTTP_TRIGGER
