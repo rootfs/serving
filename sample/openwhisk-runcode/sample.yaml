@@ -27,7 +27,7 @@ metadata:
 secrets:
 - name: basic-user-pass
 ---
-apiVersion: build.dev/v1alpha1
+apiVersion: build.knative.dev/v1alpha1
 kind: BuildTemplate
 metadata:
   name: owsk-ftl
