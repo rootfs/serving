@@ -14,7 +14,7 @@ kind: Secret
 metadata:
   name: basic-user-pass
   annotations:
-    build.dev/docker-0: https://index.docker.io/v1/
+    build.knative.dev/docker-0: https://index.docker.io/v1/
 type: kubernetes.io/basic-auth
 data:
   username: a2l0dHltZW93
