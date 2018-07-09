@@ -85,7 +85,7 @@ spec:
     source:
       git:
         url: https://github.com/rootfs-dev/serverless-ex
-        branch: master
+        revision: master
     template:
       name: owsk-ftl
       arguments:
