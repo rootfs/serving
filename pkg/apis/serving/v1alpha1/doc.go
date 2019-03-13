@@ -18,6 +18,7 @@ limitations under the License.
 // backward compatibility by support multiple concurrent versions
 // of the same resource
 
+// +k8s:openapi-gen=true
 // +k8s:deepcopy-gen=package
 // +groupName=serving.knative.dev
 package v1alpha1

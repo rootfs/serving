@@ -60,6 +60,13 @@ required = [
   name = "k8s.io/client-go"
   version = "kubernetes-1.11.3"
 
+[[constraint]]
+  name = "k8s.io/kube-openapi"
+  revision = "e3762e86a74c878ffed47484592986685639c2cd"
+[[override]]
+  name = "k8s.io/apiserver"
+  version = "kubernetes-1.11.3"
+
 [[override]]
   name = "github.com/json-iterator/go"
   # This is the commit at which k8s depends on this in 1.11
